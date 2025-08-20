@@ -1,0 +1,1 @@
+Wemakedev presensts AGENTHACK'25 hackathon
