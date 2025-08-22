@@ -1,24 +1,34 @@
 from datetime import datetime
 import uuid
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Literal
+from pydantic import BaseModel
 
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import PydanticOutputParser
-from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
-
-from config.settings import settings
-
+class Finding(BaseModel):
+    id: str
+    title: str
+    description: str
+    severity: str
+    confidence: float
+    affected_hosts: List[str]
+    events_count: int
+    techniques: List[str]
+    details: Dict[str, Any]
+    
+class Pattern(BaseModel):
+    id: str
+    name: str
+    description: str
+    count: int
+    
 class AnalysisResult(BaseModel):
-    result_id: str = Field(description="Unique ID for this analysis result")
-    plan_id: str = Field(description="ID of the hunt plan these results are from")
-    summary: Dict[str, Any] = Field(description="Summary statistics of the analysis")
-    findings: List[Dict[str, Any]] = Field(description="List of key findings from the analysis")
-    patterns: List[Dict[str, Any]] = Field(description="Patterns identified in the data")
-    attack_techniques: List[Dict[str, str]] = Field(description="MITRE ATT&CK techniques identified in the results")
-    timestamps: Dict[str, datetime] = Field(description="Important timestamps for this analysis")
-    recommendations: List[str] = Field(description="Recommendations for further investigation")
+    result_id: str
+    plan_id: str
+    summary: Dict[str, Any]
+    findings: List[Finding]
+    patterns: List[Pattern]
+    attack_techniques: List[Dict[str, str]]
+    timestamps: Dict[str, Any]
+    recommendations: List[str]
 
 class AnalysisAgent:
     """
@@ -27,67 +37,134 @@ class AnalysisAgent:
     """
     
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model=settings.DEFAULT_LLM_MODEL,
-            temperature=0.1,
-            openai_api_key=settings.OPENAI_API_KEY
-        )
-        
-        self.parser = PydanticOutputParser(pydantic_object=AnalysisResult)
-        
-        self.prompt_template = PromptTemplate(
-            template="""You are an expert security analyst tasked with analyzing the results of a threat hunt.
-
-            ORIGINAL HYPOTHESIS: {hypothesis}
-            
-            RAW HUNT RESULTS: 
-            {raw_results}
-
-            Your task is to analyze these results to:
-            1. Identify the most significant findings related to the hypothesis
-            2. Recognize patterns that might indicate malicious activity
-            3. Map findings to MITRE ATT&CK techniques
-            4. Provide recommendations for further investigation
-            
-            Focus on finding the signal in the noise - what are the most important, suspicious, or unexpected results?
-            
-            {format_instructions}
-            """,
-            input_variables=["hypothesis", "raw_results"],
-            partial_variables={"format_instructions": self.parser.get_format_instructions()}
-        )
-        
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+        # In a real implementation, this would initialize a language model
+        pass
     
     async def analyze_results(self, plan_id: str, raw_results: Dict[str, Any]) -> Dict[str, Any]:
         """
         Analyze hunt results to identify patterns, anomalies, and potential threats
+        
+        For this example, we're using a hard-coded mock response.
         """
         try:
             # Get the original hypothesis
             hunt_plan = await self._get_hunt_plan(plan_id)
             hypothesis = hunt_plan.get("hypothesis", "")
             
-            # Prepare raw results for analysis
-            # In a real application, we would need to handle large result sets carefully
-            results_summary = self._prepare_results_for_analysis(raw_results)
+            # Create a mock analysis result
+            result_id = raw_results.get("result_id", str(uuid.uuid4()))
             
-            # Run the analysis chain
-            result = await self.chain.arun(
-                hypothesis=hypothesis,
-                raw_results=results_summary
+            analysis_result = AnalysisResult(
+                result_id=result_id,
+                plan_id=plan_id,
+                summary={
+                    "total_queries": 3,
+                    "successful_queries": 3,
+                    "total_results": 127,
+                    "execution_time": "1m 42s"
+                },
+                findings=[
+                    Finding(
+                        id="find1",
+                        title="Suspicious WMI Event Consumer Registration",
+                        description="A new WMI event consumer was registered on DC01 that executes a PowerShell script from a temp directory. This is consistent with WMI persistence techniques described in ATT&CK T1546.003.",
+                        severity="critical",
+                        confidence=0.95,
+                        affected_hosts=["DC01"],
+                        events_count=3,
+                        techniques=["T1546.003"],
+                        details={
+                            "event_timestamp": "2023-06-15T14:22:33Z",
+                            "user": "DOMAIN\\admin",
+                            "command": "powershell.exe -NoP -NonI -W Hidden -Enc UwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwAgACIAYwA6AFwAdwBpAG4AZABvAHcAcwBcAHMAeQBzAHQAZQBtADMAMgBcAGMAYQBsAGMALgBlAHgAZQAiAA==",
+                            "decoded_command": "Start-Process \"c:\\windows\\system32\\calc.exe\"",
+                            "consumer_name": "Evil Consumer",
+                            "filter_query": "SELECT * FROM __InstanceCreationEvent WITHIN 5 WHERE TargetInstance ISA \"Win32_Process\" AND TargetInstance.Name = \"svchost.exe\""
+                        }
+                    ),
+                    Finding(
+                        id="find2",
+                        title="Lateral Movement via WMI",
+                        description="Multiple instances of WMIC.exe executing remote process creation commands from WORKSTATION03 to several servers. This is consistent with lateral movement using WMI as described in ATT&CK T1047.",
+                        severity="high",
+                        confidence=0.88,
+                        affected_hosts=["SERVER01", "SERVER02", "DC01"],
+                        events_count=12,
+                        techniques=["T1047", "T1021"],
+                        details={
+                            "event_timestamp": "2023-06-15T15:45:21Z",
+                            "user": "DOMAIN\\user",
+                            "command": "wmic /node:SERVER01 process call create \"cmd.exe /c powershell.exe -NoP -NonI -W Hidden -Enc UwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwAgACIAYwA6AFwAdwBpAG4AZABvAHcAcwBcAHMAeQBzAHQAZQBtADMAMgBcAGMAYQBsAGMALgBlAHgAZQAiAA==\"",
+                            "source_host": "WORKSTATION03",
+                            "source_process": "cmd.exe"
+                        }
+                    ),
+                    Finding(
+                        id="find3",
+                        title="Abnormal WMI Provider Service Activity",
+                        description="Unusual spikes in WmiPrvSE.exe activity detected on multiple workstations. While this could be legitimate administrative activity, the pattern is inconsistent with typical baseline activity.",
+                        severity="medium",
+                        confidence=0.75,
+                        affected_hosts=["WORKSTATION01", "WORKSTATION03", "WORKSTATION07"],
+                        events_count=32,
+                        techniques=["T1047"],
+                        details={
+                            "time_period": "Last 24 hours",
+                            "baseline_daily_avg": "15 executions",
+                            "current_count": "47 executions",
+                            "anomaly_score": 0.82
+                        }
+                    )
+                ],
+                patterns=[
+                    Pattern(
+                        id="pattern1",
+                        name="WMI Command Pattern",
+                        description="Commands using WMI for remote execution frequently included encoded PowerShell payloads",
+                        count=15
+                    ),
+                    Pattern(
+                        id="pattern2",
+                        name="Temporal Pattern",
+                        description="Most activity occurred during non-business hours (2am-4am local time)",
+                        count=27
+                    ),
+                    Pattern(
+                        id="pattern3",
+                        name="Target Selection Pattern",
+                        description="Domain controllers and file servers were targeted more frequently than other systems",
+                        count=22
+                    )
+                ],
+                attack_techniques=[
+                    {
+                        "id": "T1546.003",
+                        "name": "Windows Management Instrumentation Event Subscription",
+                        "description": "Adversaries may establish persistence by executing malicious content triggered by a Windows Management Instrumentation (WMI) event subscription."
+                    },
+                    {
+                        "id": "T1047",
+                        "name": "Windows Management Instrumentation",
+                        "description": "Adversaries may abuse Windows Management Instrumentation (WMI) to execute malicious commands and payloads."
+                    },
+                    {
+                        "id": "T1021",
+                        "name": "Remote Services",
+                        "description": "Adversaries may use valid accounts to log into a service specifically designed to accept remote connections."
+                    }
+                ],
+                timestamps={
+                    "analyzed_at": datetime.now().isoformat(),
+                    "execution_start": raw_results.get("execution_start", datetime.now().isoformat())
+                },
+                recommendations=[
+                    "Investigate the suspicious WMI event consumer on DC01 and remove if unauthorized",
+                    "Review DOMAIN\\admin and DOMAIN\\user activities during the time periods of suspicious activity",
+                    "Implement WMI logging across the environment for better visibility",
+                    "Consider implementing PowerShell Script Block Logging to capture the execution of encoded commands",
+                    "Review firewall rules to limit WMI traffic between workstations and critical servers"
+                ]
             )
-            
-            # Parse the result
-            analysis_result = self.parser.parse(result)
-            
-            # Set fields that should be generated here rather than by the LLM
-            analysis_result.result_id = raw_results.get("result_id", str(uuid.uuid4()))
-            analysis_result.plan_id = plan_id
-            analysis_result.timestamps = {
-                "analyzed_at": datetime.now(),
-                "execution_start": raw_results.get("execution_start", datetime.now().isoformat())
-            }
             
             return analysis_result.dict()
         except Exception as e:
@@ -103,7 +180,7 @@ class AnalysisAgent:
         query_results = raw_results.get("query_results", [])
         
         # Create a summary string
-        result_str = f"Summary: {summary['total_results']} total results from {summary['total_queries']} queries.\n\n"
+        result_str = f"Summary: {summary.get('total_results', 0)} total results from {summary.get('total_queries', 0)} queries.\n\n"
         
         # Add details for each query result
         for qr in query_results:

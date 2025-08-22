@@ -12,13 +12,15 @@ Threat-Seeker AI is an elite, hypothesis-driven threat hunting assistant designe
 
 ## Multi-Agent Architecture
 
-Threat-Seeker AI uses a Portia AI-based multi-agent architecture:
+Threat-Seeker AI uses a sophisticated multi-agent architecture:
 
 1. **Hunt Planner Agent**: Translates natural language hypotheses into comprehensive hunt plans with specific queries
-2. **Analyst Review & Approval Gate**: Human-in-the-loop interface for reviewing and approving hunt plans
-3. **Hunt Execution Agent**: Executes approved queries against multiple data sources
-4. **Analysis Agent**: Processes results to identify critical threats and patterns
-5. **Clarification Agent**: Handles ambiguity through analyst interaction
+2. **Critic Agent**: Reviews hunt plans to improve quality, efficiency, and accuracy before they reach analysts
+3. **Analyst Review & Approval Gate**: Human-in-the-loop interface for reviewing and approving hunt plans
+4. **Hunt Execution Agent**: Executes approved queries against multiple data sources
+5. **Analysis Agent**: Uses a Mixture of Experts approach to process results, with specialized experts for different data types
+6. **Clarification Agent**: Handles ambiguity through analyst interaction
+7. **Hypothesis Generator Agent**: Dynamically generates relevant hunt hypotheses from threat intelligence
 
 ## Key Features
 

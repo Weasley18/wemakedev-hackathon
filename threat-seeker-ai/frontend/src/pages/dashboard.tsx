@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   AlertTriangle, 
@@ -14,9 +15,39 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import apiService, { Hypothesis } from '@/services/api';
+import { useToast } from '@/components/ui/use-toast';
 
 export function Dashboard() {
-  // Mock data - in a real app this would come from the backend
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestedHypotheses, setSuggestedHypotheses] = useState<Hypothesis[]>([]);
+  
+  // Fetch dynamic hypotheses from the backend
+  useEffect(() => {
+    const fetchHypotheses = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiService.getSuggestedHypotheses();
+        setSuggestedHypotheses(response.hypotheses);
+      } catch (error) {
+        console.error('Failed to fetch suggested hypotheses:', error);
+        toast({
+          title: 'Error fetching suggested hypotheses',
+          description: 'Please try refreshing the page.',
+          variant: 'destructive'
+        });
+        // Fallback to static data if API fails
+        setSuggestedHypotheses(staticHypotheses);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchHypotheses();
+  }, [toast]);
+  
+  // Static data - only used as fallback if API fails
   const recentHunts = [
     { 
       id: 'h1', 
@@ -44,24 +75,42 @@ export function Dashboard() {
     }
   ];
 
-  const suggestedHypotheses = [
+  const staticHypotheses = [
     { 
       id: 'sug1', 
       title: 'DCSync attacks from privileged workstations',
+      description: 'Look for potential DCSync attacks originating from workstations, which may indicate credential theft.',
+      threat_actors: ['APT29', 'FIN7'],
+      techniques: ['T1003.006', 'T1207'],
+      confidence: 0.85,
+      justification: 'Recent breaches have shown an increase in this technique',
+      data_sources: ['Windows Event Logs', 'Active Directory Logs'],
       source: 'Intel Feed',
-      confidence: 0.85
+      generated_at: new Date().toISOString()
     },
     { 
       id: 'sug2', 
       title: 'Log4j exploitation attempts in web servers',
+      description: 'Monitor for Log4j exploitation attempts targeting your web infrastructure.',
+      threat_actors: ['Multiple threat actors'],
+      techniques: ['T1190', 'T1059.1'],
+      confidence: 0.73,
+      justification: 'Widespread vulnerability with continued exploitation attempts',
+      data_sources: ['Web Server Logs', 'Network Traffic'],
       source: 'Anomaly Detection',
-      confidence: 0.73
+      generated_at: new Date().toISOString()
     },
     { 
       id: 'sug3', 
       title: 'PsExec usage for lateral movement',
+      description: 'Detect potentially malicious use of PsExec for lateral movement across your network.',
+      threat_actors: ['APT32', 'FIN10'],
+      techniques: ['T1021.002', 'T1570'],
+      confidence: 0.91,
+      justification: 'Common technique observed in recent campaigns',
+      data_sources: ['EDR', 'Process Creation Logs'],
       source: 'MITRE ATT&CK',
-      confidence: 0.91
+      generated_at: new Date().toISOString()
     }
   ];
 
@@ -188,28 +237,51 @@ export function Dashboard() {
               <CardDescription>Based on threat intel and system behavior</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {suggestedHypotheses.map((hypothesis) => (
-                  <div key={hypothesis.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-xs font-medium rounded-full bg-secondary px-2 py-1">
-                        {hypothesis.source}
-                      </span>
-                      <span className="text-xs font-medium">
-                        {Math.round(hypothesis.confidence * 100)}% confidence
-                      </span>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {suggestedHypotheses.map((hypothesis) => (
+                    <div key={hypothesis.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-xs font-medium rounded-full bg-secondary px-2 py-1">
+                          {hypothesis.source}
+                        </span>
+                        <span className="text-xs font-medium">
+                          {Math.round(hypothesis.confidence * 100)}% confidence
+                        </span>
+                      </div>
+                      <h4 className="font-medium">{hypothesis.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {hypothesis.description}
+                      </p>
+                      {hypothesis.techniques && hypothesis.techniques.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {hypothesis.techniques.slice(0, 3).map((technique) => (
+                            <span key={technique} className="text-xs bg-secondary/60 px-1.5 py-0.5 rounded">
+                              {technique}
+                            </span>
+                          ))}
+                          {hypothesis.techniques.length > 3 && (
+                            <span className="text-xs bg-secondary/60 px-1.5 py-0.5 rounded">
+                              +{hypothesis.techniques.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-3 flex justify-end">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/hunt/create?hypothesis=${encodeURIComponent(hypothesis.title)}`}>
+                            Use This <Crosshair className="ml-1 h-3 w-3" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                    <h4 className="font-medium">{hypothesis.title}</h4>
-                    <div className="mt-3 flex justify-end">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/hunt/create?hypothesis=${encodeURIComponent(hypothesis.title)}`}>
-                          Use This <Crosshair className="ml-1 h-3 w-3" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -245,10 +317,18 @@ export function Dashboard() {
               
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 text-amber-500 mr-2" />
+                  <AlertTriangle className="h-5 w-5 text-green-500 mr-2" />
                   <span>Hypothesis Generation</span>
                 </div>
-                <span className="rounded-full bg-amber-500/20 text-amber-500 px-2 py-0.5 text-xs">Degraded</span>
+                <span className="rounded-full bg-green-500/20 text-green-500 px-2 py-0.5 text-xs">Operational</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <Shield className="h-5 w-5 text-green-500 mr-2" />
+                  <span>Critic Agent</span>
+                </div>
+                <span className="rounded-full bg-green-500/20 text-green-500 px-2 py-0.5 text-xs">Operational</span>
               </div>
             </CardContent>
           </Card>

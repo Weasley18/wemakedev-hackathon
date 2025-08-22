@@ -24,7 +24,7 @@ class HuntExecutionAgent:
                 password=settings.SPLUNK_PASSWORD
             ),
             "elastic": ElasticConnector(
-                hosts=settings.ELASTIC_HOSTS,
+                hosts=[settings.ELASTIC_HOST],
                 username=settings.ELASTIC_USERNAME,
                 password=settings.ELASTIC_PASSWORD
             ),

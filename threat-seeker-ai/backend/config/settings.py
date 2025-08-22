@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     SPLUNK_USERNAME: str = config("SPLUNK_USERNAME", default="")
     SPLUNK_PASSWORD: str = config("SPLUNK_PASSWORD", default="")
     
-    ELASTIC_HOSTS: List[str] = config("ELASTIC_HOSTS", default="http://localhost:9200", cast=lambda v: [s.strip() for s in v.split(',')] if v else ["http://localhost:9200"])
+    ELASTIC_HOST: str = config("ELASTIC_HOST", default="http://localhost:9200")
     ELASTIC_USERNAME: str = config("ELASTIC_USERNAME", default="")
     ELASTIC_PASSWORD: str = config("ELASTIC_PASSWORD", default="")
     
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     ENABLE_HYPOTHESIS_GENERATION: bool = config("ENABLE_HYPOTHESIS_GENERATION", default=True, cast=bool)
     MAX_QUERIES_PER_PLAN: int = config("MAX_QUERIES_PER_PLAN", default=10, cast=int)
     MAX_RESULTS_PER_QUERY: int = config("MAX_RESULTS_PER_QUERY", default=1000, cast=int)
-    THREAT_INTEL_SOURCES: List[str] = config("THREAT_INTEL_SOURCES", default="", cast=lambda v: [s.strip() for s in v.split(',')] if v and v.strip() else [])
+    THREAT_INTEL_SOURCES: str = config("THREAT_INTEL_SOURCES", default="")
     
     class Config:
         env_file = ".env"

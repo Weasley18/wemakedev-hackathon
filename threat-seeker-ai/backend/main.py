@@ -9,6 +9,8 @@ from agents.planner import HuntPlannerAgent
 from agents.executor import HuntExecutionAgent
 from agents.analyzer import AnalysisAgent
 from agents.clarifier import ClarificationAgent
+from agents.critic import CriticAgent
+from agents.hypothesis_generator import HypothesisGeneratorAgent
 from config.settings import settings
 
 app = FastAPI(
@@ -74,11 +76,13 @@ async def create_hunt_plan(hypothesis_req: HypothesisRequest):
     Generate a hunt plan from a natural language hypothesis
     """
     try:
+        # Generate the hunt plan
         hunt_plan = await planner_agent.create_plan(
             hypothesis=hypothesis_req.hypothesis,
             analyst_id=hypothesis_req.analyst_id,
             context=hypothesis_req.context
         )
+        
         return hunt_plan
     except Exception as e:
         raise HTTPException(
@@ -136,6 +140,21 @@ async def health_check():
     Health check endpoint
     """
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/suggested-hypotheses")
+async def get_suggested_hypotheses(count: Optional[int] = 3):
+    """
+    Get AI-generated threat hunting hypotheses
+    """
+    try:
+        # Generate hypotheses
+        hypotheses = await hypothesis_generator_agent.generate_hypotheses(count=count)
+        return {"hypotheses": hypotheses}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate hypotheses: {str(e)}"
+        )
 
 if __name__ == "__main__":
     import uvicorn

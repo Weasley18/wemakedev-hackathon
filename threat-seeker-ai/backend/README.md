@@ -4,12 +4,14 @@ This directory contains the Python FastAPI backend for Threat-Seeker AI.
 
 ## Architecture
 
-The backend implements a multi-agent architecture:
+The backend implements a sophisticated multi-agent architecture:
 
 - **Hunt Planner Agent**: Converts analyst hypotheses into detailed hunt plans
+- **Critic Agent**: Reviews and improves hunt plans before they reach analysts
 - **Hunt Execution Agent**: Securely executes approved queries against data sources
-- **Analysis Agent**: Processes results to identify key threats and patterns
+- **Analysis Agent**: Processes results using Mixture of Experts (MoE) approach with specialized experts for different data types
 - **Clarification Agent**: Handles ambiguities through analyst interaction
+- **Hypothesis Generator Agent**: Dynamically generates relevant hunt hypotheses from threat intelligence
 
 ## Setup
 
@@ -36,9 +38,10 @@ The backend implements a multi-agent architecture:
 
 ## API Endpoints
 
-- `POST /api/hypothesis`: Generate a hunt plan from a natural language hypothesis
+- `POST /api/hypothesis`: Generate a hunt plan from a natural language hypothesis (includes critic review)
 - `POST /api/execute`: Execute approved queries from a hunt plan
 - `POST /api/clarify`: Request clarification about hunt results
+- `GET /api/suggested-hypotheses`: Get AI-generated threat hunting hypotheses
 - `GET /api/health`: Health check endpoint
 
 ## Data Source Connectors

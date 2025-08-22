@@ -1,13 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any, Optional
 
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
-from pydantic import BaseModel
-
-from config.settings import settings
-
 class ClarificationAgent:
     """
     Agent responsible for handling ambiguity in analysis results through
@@ -15,50 +8,25 @@ class ClarificationAgent:
     """
     
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model=settings.DEFAULT_LLM_MODEL,
-            temperature=0.3,
-            openai_api_key=settings.OPENAI_API_KEY
-        )
-        
-        self.prompt_template = PromptTemplate(
-            template="""You are an expert security analyst clarifying aspects of a threat hunt.
-            
-            HUNT RESULT CONTEXT:
-            {context}
-            
-            ANALYST QUESTION:
-            {question}
-            
-            Please provide a clear, concise answer based on the hunt result context.
-            Include any relevant technical details and explain security implications.
-            If you're uncertain, state that clearly rather than guessing.
-            """,
-            input_variables=["context", "question"]
-        )
-        
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+        # In a real implementation, this would initialize a language model
+        pass
     
     async def get_clarification(self, result_id: str, question: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Provide clarification about hunt results based on analyst questions
+        
+        For this example, we're using a hard-coded mock response.
         """
         try:
             # Get the hunt result
             hunt_result = await self._get_hunt_result(result_id)
             
-            # Combine the provided context with the hunt result
-            full_context = self._prepare_context(hunt_result, context)
+            # In a real implementation, we would process the question and generate an answer
+            # For this mock, we select a response based on keywords in the question
+            answer = self._get_mock_answer(question)
             
-            # Run the clarification chain
-            answer = await self.chain.arun(
-                context=full_context,
-                question=question
-            )
-            
-            # Calculate confidence score (simplified for this example)
-            # In a real app, this would be based on more sophisticated measures
-            confidence = self._calculate_confidence(answer)
+            # Calculate a mock confidence score
+            confidence = 0.92 if "wmi" in question.lower() else 0.85
             
             return {
                 "result_id": result_id,
@@ -71,51 +39,30 @@ class ClarificationAgent:
             print(f"Error getting clarification: {str(e)}")
             raise
     
+    def _get_mock_answer(self, question: str) -> str:
+        """
+        Generate a mock answer based on keywords in the question
+        """
+        question_lower = question.lower()
+        
+        if "wmi" in question_lower and "persistence" in question_lower:
+            return "The WMI event consumer registration is considered suspicious because it uses an encoded PowerShell command that executes at system startup and is triggered by svchost.exe process creation, which is a common persistence technique. Additionally, the consumer was registered during non-business hours (2:22 AM) by an administrative account that doesn't typically perform system changes at that time."
+        
+        elif "lateral movement" in question_lower:
+            return "Based on the findings, you should prioritize investigating the lateral movement activity from WORKSTATION03. This system appears to be the source of WMI commands targeting multiple servers including your domain controllers. The timing, frequency, and encoded PowerShell payloads strongly suggest this is the initial access point for the attacker."
+        
+        elif "priority" in question_lower or "first" in question_lower:
+            return "You should prioritize investigating the WMI event consumer binding on DC01. This represents a persistence mechanism that could allow the attacker to maintain access even after remediation efforts. Domain controllers are high-value targets, and this finding has the highest confidence score (95%) among all discoveries."
+        
+        else:
+            return "The analysis shows a clear attack chain involving initial access through WORKSTATION03, lateral movement via WMI to multiple servers, and persistence using WMI event subscriptions. The encoded PowerShell commands appear to be establishing additional access mechanisms. I recommend investigating the affected systems in isolation to prevent further lateral movement while you determine the full scope of compromise."
+    
     def _prepare_context(self, hunt_result: Dict[str, Any], user_context: Dict[str, Any]) -> str:
         """
         Prepare context for clarification by combining hunt result with user-provided context
         """
-        # Start with the hunt result summary
-        context_str = "HUNT RESULT SUMMARY:\n"
-        
-        # Add findings
-        findings = hunt_result.get("findings", [])
-        context_str += f"Key Findings ({len(findings)}):\n"
-        for i, finding in enumerate(findings[:5]):  # Limit to top 5 findings
-            context_str += f"  {i+1}. {finding.get('title', 'Unnamed Finding')}: {finding.get('description', 'No description')}\n"
-        
-        # Add attack techniques
-        techniques = hunt_result.get("attack_techniques", [])
-        context_str += f"\nIdentified MITRE ATT&CK Techniques ({len(techniques)}):\n"
-        for technique in techniques[:5]:  # Limit to top 5 techniques
-            context_str += f"  - {technique.get('id', 'Unknown')}: {technique.get('name', 'Unknown')}\n"
-        
-        # Add user-provided context
-        context_str += "\nADDITIONAL CONTEXT:\n"
-        for key, value in user_context.items():
-            context_str += f"  {key}: {value}\n"
-        
-        return context_str
-    
-    def _calculate_confidence(self, answer: str) -> float:
-        """
-        Calculate confidence score for the answer
-        
-        In a real app, this would use more sophisticated methods.
-        For this example, we're using a simple heuristic.
-        """
-        # Simple confidence heuristic based on hedge words
-        hedge_words = ["might", "could", "possibly", "perhaps", "not sure", 
-                      "uncertain", "may", "unclear", "don't know"]
-        
-        # Count hedge words
-        hedge_count = sum(answer.lower().count(word) for word in hedge_words)
-        
-        # Calculate confidence (inversely related to hedge words)
-        base_confidence = 0.9  # Start with high confidence
-        confidence = max(0.1, min(0.99, base_confidence - (hedge_count * 0.1)))
-        
-        return confidence
+        # For the mock implementation, we don't actually use this
+        return "Context prepared but not used in mock implementation"
     
     async def _get_hunt_result(self, result_id: str) -> Dict[str, Any]:
         """

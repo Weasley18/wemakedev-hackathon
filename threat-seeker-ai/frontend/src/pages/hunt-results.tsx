@@ -16,6 +16,8 @@ import {
   Star
 } from 'lucide-react';
 
+import { AttackPathGraph } from '@/components/AttackPathGraph';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -243,6 +245,9 @@ export function HuntResults() {
         </div>
       </div>
 
+      {/* Attack Path Graph */}
+      <AttackPathGraph findings={huntResult.findings} />
+      
       {/* Summary Card */}
       <Card>
         <CardHeader>

@@ -69,6 +69,19 @@ export interface ClarificationResponse {
 }
 
 // API Service functions
+export interface Hypothesis {
+  id: string;
+  title: string;
+  description: string;
+  threat_actors: string[];
+  techniques: string[];
+  confidence: number;
+  justification: string;
+  data_sources: string[];
+  source: string;
+  generated_at: string;
+}
+
 export const apiService = {
   // Create a hunt plan from a natural language hypothesis
   async createHuntPlan(request: HypothesisRequest): Promise<HuntPlan> {
@@ -85,6 +98,12 @@ export const apiService = {
   // Request clarification about hunt results
   async requestClarification(request: ClarificationRequest): Promise<ClarificationResponse> {
     const response = await api.post<ClarificationResponse>('/clarify', request);
+    return response.data;
+  },
+  
+  // Get suggested hypotheses
+  async getSuggestedHypotheses(count: number = 3): Promise<{ hypotheses: Hypothesis[] }> {
+    const response = await api.get<{ hypotheses: Hypothesis[] }>(`/suggested-hypotheses?count=${count}`);
     return response.data;
   },
 
