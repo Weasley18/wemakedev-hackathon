@@ -5,7 +5,7 @@ import uuid
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from config.settings import settings
@@ -18,12 +18,6 @@ class HypothesisGeneratorAgent:
     """
     
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model=settings.DEFAULT_LLM_MODEL,
-            temperature=0.4,
-            openai_api_key=settings.OPENAI_API_KEY
-        )
-        
         self.rest_api_connector = RestApiConnector()
         
         self.prompt_template = PromptTemplate(
@@ -68,7 +62,21 @@ class HypothesisGeneratorAgent:
             input_variables=["threat_intel", "environment_context"]
         )
         
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+        # Only initialize LLM if API key is available and valid
+        self.llm = None
+        self.chain = None
+        
+        if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your-api-key-here":
+            try:
+                self.llm = ChatGoogleGenerativeAI(
+                    model=settings.DEFAULT_LLM_MODEL,
+                    temperature=0.4,
+                    google_api_key=settings.GEMINI_API_KEY
+                )
+                self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+            except Exception as e:
+                print(f"Failed to initialize LLM: {str(e)}")
+                # Continue without LLM - will use mock data
     
     async def _fetch_threat_intelligence(self) -> str:
         """
@@ -155,6 +163,11 @@ class HypothesisGeneratorAgent:
         Generate actionable threat hunting hypotheses
         """
         try:
+            # Check if LLM chain is initialized
+            if self.chain is None:
+                # LLM is not available, raise exception to trigger fallback to mock data
+                raise ValueError("LLM chain not initialized. Using mock data.")
+                
             # Fetch threat intelligence
             threat_intel = await self._fetch_threat_intelligence()
             
@@ -180,4 +193,5 @@ class HypothesisGeneratorAgent:
             return limited_hypotheses
         except Exception as e:
             print(f"Error generating hypotheses: {str(e)}")
+            # We'll let the main.py handle the fallback to mock data
             raise

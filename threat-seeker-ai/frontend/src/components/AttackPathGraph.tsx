@@ -265,7 +265,7 @@ export function AttackPathGraph({ findings, onNodeClick: handleFindingClick }: A
   }, [findings, createGraphData]);
   
   // Handle node clicks to show details
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     if (node.data?.finding && typeof handleFindingClick === 'function') {
       handleFindingClick(node.data.finding);
     }
@@ -313,7 +313,7 @@ export function AttackPathGraph({ findings, onNodeClick: handleFindingClick }: A
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
+          onNodeClick={handleNodeClick}
           fitView
           attributionPosition="bottom-left"
           connectionLineType={ConnectionLineType.SmoothStep}

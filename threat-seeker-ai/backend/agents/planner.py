@@ -104,4 +104,4 @@ class HuntPlannerAgent:
             estimated_execution_time="5 minutes"
         )
         
-        return hunt_plan.dict()
+        return hunt_plan

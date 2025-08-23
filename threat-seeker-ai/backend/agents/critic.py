@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Any
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from config.settings import settings
@@ -16,10 +16,10 @@ class CriticAgent:
     """
     
     def __init__(self):
-        self.llm = ChatOpenAI(
+        self.llm = ChatGoogleGenerativeAI(
             model=settings.DEFAULT_LLM_MODEL,
             temperature=0.2,
-            openai_api_key=settings.OPENAI_API_KEY
+            google_api_key=settings.GEMINI_API_KEY
         )
         
         self.prompt_template = PromptTemplate(

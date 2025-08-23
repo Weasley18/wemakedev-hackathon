@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=30, cast=int)
     
     # LLM Settings
-    OPENAI_API_KEY: str = config("OPENAI_API_KEY", default="")
-    DEFAULT_LLM_MODEL: str = config("DEFAULT_LLM_MODEL", default="gpt-4-turbo")
+    GEMINI_API_KEY: str = config("GEMINI_API_KEY", default="")
+    DEFAULT_LLM_MODEL: str = config("DEFAULT_LLM_MODEL", default="gemini-1.5-pro")
     
     # Data Source Settings
     SPLUNK_HOST: str = config("SPLUNK_HOST", default="")
