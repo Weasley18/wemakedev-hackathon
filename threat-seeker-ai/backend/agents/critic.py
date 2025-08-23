@@ -2,8 +2,8 @@ from datetime import datetime
 import uuid
 from typing import Dict, List, Optional, Any
 
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,8 @@ class CriticAgent:
         self.llm = ChatGoogleGenerativeAI(
             model=settings.DEFAULT_LLM_MODEL,
             temperature=0.2,
-            google_api_key=settings.GEMINI_API_KEY
+            google_api_key=settings.GEMINI_API_KEY,
+            convert_system_message_to_human=True
         )
         
         self.prompt_template = PromptTemplate(
@@ -71,7 +72,7 @@ class CriticAgent:
             input_variables=["hypothesis", "queries"]
         )
         
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+        self.chain = self.prompt_template | self.llm | StrOutputParser()
     
     async def critique_plan(self, plan: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -94,10 +95,10 @@ class CriticAgent:
                 queries_str += f"Risk Level: {query.get('risk_level', 'unknown')}\n\n"
             
             # Run the critique chain
-            critique_result = await self.chain.arun(
-                hypothesis=hypothesis,
-                queries=queries_str
-            )
+            critique_result = await self.chain.ainvoke({
+                "hypothesis": hypothesis,
+                "queries": queries_str
+            })
             
             # Parse the critique result
             import json

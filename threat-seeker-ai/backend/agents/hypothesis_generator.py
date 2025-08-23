@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import uuid
 
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
@@ -71,9 +71,10 @@ class HypothesisGeneratorAgent:
                 self.llm = ChatGoogleGenerativeAI(
                     model=settings.DEFAULT_LLM_MODEL,
                     temperature=0.4,
-                    google_api_key=settings.GEMINI_API_KEY
+                    google_api_key=settings.GEMINI_API_KEY,
+                    convert_system_message_to_human=True
                 )
-                self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+                self.chain = self.prompt_template | self.llm | StrOutputParser()
             except Exception as e:
                 print(f"Failed to initialize LLM: {str(e)}")
                 # Continue without LLM - will use mock data
@@ -175,10 +176,10 @@ class HypothesisGeneratorAgent:
             environment_context = self._get_environment_context()
             
             # Run the chain
-            result = await self.chain.arun(
-                threat_intel=threat_intel,
-                environment_context=environment_context
-            )
+            result = await self.chain.ainvoke({
+                "threat_intel": threat_intel,
+                "environment_context": environment_context
+            })
             
             # Parse the result
             hypotheses = json.loads(result)

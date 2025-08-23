@@ -32,16 +32,15 @@ class Settings(BaseSettings):
     MAX_RESULTS_PER_QUERY: int = config("MAX_RESULTS_PER_QUERY", default=1000, cast=int)
     THREAT_INTEL_SOURCES: str = config("THREAT_INTEL_SOURCES", default="")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        
-        @classmethod
-        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
-            # Try .env first, then fallback to env.example if .env doesn't exist
-            if not os.path.isfile(".env") and os.path.isfile("env.example"):
-                env_settings.env_file = "env.example"
-            return (init_settings, env_settings, file_secret_settings)
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "allow"
+    }
+    
+    # Try .env first, then fallback to env.example if .env doesn't exist
+    if not os.path.isfile(".env") and os.path.isfile("env.example"):
+        model_config["env_file"] = "env.example"
 
 settings = Settings()
