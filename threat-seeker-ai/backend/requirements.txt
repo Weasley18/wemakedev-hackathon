@@ -9,6 +9,9 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 requests==2.31.0
+six>=1.16.0
+wheel>=0.42.0
+setuptools>=69.0.0
 splunk-sdk==1.7.3
 elasticsearch==8.8.0
 python-decouple==3.8
