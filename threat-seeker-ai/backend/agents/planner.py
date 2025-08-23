@@ -26,13 +26,14 @@ class HuntPlannerAgent:
     """
     Agent responsible for translating natural language hypotheses into detailed hunt plans
     with specific queries for different data sources.
+    
     """
     
     def __init__(self):
         # In a real implementation, this would initialize a language model
         pass
     
-    async def create_plan(self, hypothesis: str, analyst_id: str, context: Optional[Dict[str, Any]] = None) -> HuntPlan:
+    async def create_plan(self, hypothesis: str, analyst_id: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Create a hunt plan from a natural language hypothesis
         
@@ -41,7 +42,7 @@ class HuntPlannerAgent:
         # Generate a unique plan ID
         plan_id = str(uuid.uuid4())
         
-        # Create a mock hunt plan
+        # Create a mock hunt plan with QueryDetails objects
         hunt_plan = HuntPlan(
             plan_id=plan_id,
             hypothesis=hypothesis,
@@ -98,14 +99,21 @@ class HuntPlannerAgent:
                 {
                     "id": "T1021",
                     "name": "Remote Services",
-                    "description": "Adversaries may use valid accounts to log into a service specifically designed to accept remote connections."
+                    "description": "Adversaries may use valid accounts to log into remote services such as VPN, RDP, or SSH."
                 }
             ],
-            estimated_execution_time="5 minutes"
+            estimated_execution_time="2-5 minutes"
         )
         
-        # Convert QueryDetails objects to dictionaries to match the API model
+        # Convert the hunt_plan to a dictionary
         plan_dict = hunt_plan.model_dump()
-        plan_dict['queries'] = [q.model_dump() for q in hunt_plan.queries]
         
-        return HuntPlan(**plan_dict)
+        # Convert each QueryDetails object in queries to a dictionary
+        queries_dicts = []
+        for query in hunt_plan.queries:
+            queries_dicts.append(query.model_dump())
+        
+        # Replace the list of QueryDetails objects with the list of dictionaries
+        plan_dict["queries"] = queries_dicts
+        
+        return plan_dict

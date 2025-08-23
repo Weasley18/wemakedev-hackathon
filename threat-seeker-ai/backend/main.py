@@ -151,7 +151,7 @@ async def create_hunt_plan(hypothesis_req: HypothesisRequest):
             context=hypothesis_req.context
         )
         
-        logger.info(f"Successfully created hunt plan with ID: {hunt_plan.plan_id}")
+        logger.info(f"Successfully created hunt plan with ID: {hunt_plan['plan_id']}")
         return hunt_plan
     except Exception as e:
         error_details = traceback.format_exc()
