@@ -244,12 +244,21 @@ async def request_clarification(req: ClarificationRequest):
         )
 
 @app.get("/api/health")
-async def health_check():
+async def api_health_check():
     """
-    Health check endpoint
+    API health check endpoint
     """
-    logger.info("Health check endpoint called")
+    logger.info("API health check endpoint called")
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+@app.get("/")
+@app.head("/")
+async def root_health_check():
+    """
+    Root health check endpoint that works for both GET and HEAD requests
+    """
+    logger.info("Root health check endpoint called")
+    return {"status": "ok", "message": "Threat Seeker API is running"}
 
 @app.get("/api/suggested-hypotheses")
 async def get_suggested_hypotheses(count: Optional[int] = 3):
