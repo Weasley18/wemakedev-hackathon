@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo } from 'react';
 import ReactFlow, {
   Node,
   Edge,
-  Position,
   ConnectionLineType,
   Panel,
   useNodesState,
@@ -14,7 +13,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface FindingDetail {
   id: string;
@@ -265,7 +264,7 @@ export function AttackPathGraph({ findings, onNodeClick: handleFindingClick }: A
   }, [findings, createGraphData]);
   
   // Handle node clicks to show details
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     if (node.data?.finding && typeof handleFindingClick === 'function') {
       handleFindingClick(node.data.finding);
     }

@@ -17,18 +17,20 @@ import {
 } from 'lucide-react';
 
 import { AttackPathGraph } from '@/components/AttackPathGraph';
+import { FindingDetail } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import apiService, { ClarificationRequest } from '@/services/api';
+// Types are commented out as they're only used in commented code
+// import { ClarificationRequest } from '@/services/api';
 
 export function HuntResults() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [expandedFindings, setExpandedFindings] = useState<Record<string, boolean>>({});
   const [clarificationQuestion, setClarificationQuestion] = useState('');
   const [clarificationResponse, setClarificationResponse] = useState<string | null>(null);
@@ -158,6 +160,8 @@ export function HuntResults() {
     
     try {
       // In a real app, this would be an API call
+      // Here we would construct the request object
+      /* Example request:
       const request: ClarificationRequest = {
         result_id: huntResult.result_id,
         question: clarificationQuestion,
@@ -167,6 +171,7 @@ export function HuntResults() {
           findings_count: huntResult.findings.length
         }
       };
+      */
       
       // Mock the API response for this example
       // const response = await apiService.requestClarification(request);
@@ -246,7 +251,7 @@ export function HuntResults() {
       </div>
 
       {/* Attack Path Graph */}
-      <AttackPathGraph findings={huntResult.findings} />
+      <AttackPathGraph findings={huntResult.findings as unknown as FindingDetail[]} />
       
       {/* Summary Card */}
       <Card>

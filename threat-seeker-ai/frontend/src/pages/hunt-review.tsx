@@ -6,7 +6,6 @@ import {
   Check, 
   ChevronDown, 
   ChevronUp, 
-  Code, 
   Database, 
   ExternalLink, 
   FileText, 
@@ -20,7 +19,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import apiService, { HuntPlan, Query, QueryApprovalRequest } from '@/services/api';
+// QueryApprovalRequest is only used in commented code
+import { HuntPlan } from '@/services/api';
 
 export function HuntReview() {
   const { id } = useParams<{ id: string }>();
@@ -185,11 +185,14 @@ process.command_line:(*process call create* OR *wmi* OR *win32_process* OR *invo
       });
       
       // In a real app, this would execute the hunt
+      // Here we would construct the request object
+      /* Example request:
       const request: QueryApprovalRequest = {
         plan_id: huntPlan.plan_id,
         query_ids: approvedQueryIds,
         modifications: Object.keys(modifications).length > 0 ? modifications : undefined
       };
+      */
       
       // Mock execution for this example
       // const result = await apiService.executeHuntPlan(request);

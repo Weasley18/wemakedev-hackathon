@@ -7,8 +7,7 @@ import {
   BarChart2, 
   Settings,
   Shield,
-  Database,
-  PieChart 
+  Database
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
