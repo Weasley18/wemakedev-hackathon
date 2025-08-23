@@ -1,5 +1,6 @@
 from datetime import datetime
 import uuid
+import logging
 from typing import Dict, List, Optional, Any
 
 from langchain_core.prompts import PromptTemplate
@@ -8,6 +9,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from config.settings import settings
+from utils.retry_handler import async_retry_with_exponential_backoff
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 class CriticAgent:
     """
@@ -16,6 +21,11 @@ class CriticAgent:
     """
     
     def __init__(self):
+        # Check if API key is available and valid
+        if not settings.GEMINI_API_KEY or settings.GEMINI_API_KEY == "your-api-key-here":
+            logger.error("No valid Gemini API key found for CriticAgent")
+            raise ValueError("No valid Gemini API key provided")
+            
         self.llm = ChatGoogleGenerativeAI(
             model=settings.DEFAULT_LLM_MODEL,
             temperature=0.2,
@@ -94,11 +104,18 @@ class CriticAgent:
                 queries_str += f"Expected Volume: {query.get('expected_volume', 'unknown')}\n"
                 queries_str += f"Risk Level: {query.get('risk_level', 'unknown')}\n\n"
             
-            # Run the critique chain
-            critique_result = await self.chain.ainvoke({
-                "hypothesis": hypothesis,
-                "queries": queries_str
-            })
+            # Run the critique chain with retry logic for handling rate limits
+            critique_result = await async_retry_with_exponential_backoff(
+                self.chain.ainvoke,
+                {
+                    "hypothesis": hypothesis,
+                    "queries": queries_str
+                },
+                max_retries=5,  # Maximum number of retries
+                # The initial_delay will be overridden by API's retry_delay if available
+                initial_delay=20,
+                max_delay=300  # Maximum delay of 5 minutes
+            )
             
             # Parse the critique result
             import json
@@ -136,5 +153,5 @@ class CriticAgent:
             return plan
         except Exception as e:
             # Log the error
-            print(f"Error critiquing hunt plan: {str(e)}")
+            logger.error(f"Error critiquing hunt plan: {str(e)}")
             raise

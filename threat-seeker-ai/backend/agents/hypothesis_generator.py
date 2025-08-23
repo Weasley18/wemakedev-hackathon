@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import uuid
@@ -10,6 +11,10 @@ from pydantic import BaseModel, Field
 
 from config.settings import settings
 from connectors.rest_api import RestApiConnector
+from utils.retry_handler import async_retry_with_exponential_backoff
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 class HypothesisGeneratorAgent:
     """
@@ -76,8 +81,8 @@ class HypothesisGeneratorAgent:
                 )
                 self.chain = self.prompt_template | self.llm | StrOutputParser()
             except Exception as e:
-                print(f"Failed to initialize LLM: {str(e)}")
-                # Continue without LLM - will use mock data
+                            logger.error(f"Failed to initialize LLM: {str(e)}")
+            # Continue without LLM - will use mock data
     
     async def _fetch_threat_intelligence(self) -> str:
         """
@@ -132,7 +137,7 @@ class HypothesisGeneratorAgent:
             
             return intel
         except Exception as e:
-            print(f"Error fetching threat intelligence: {str(e)}")
+            logger.error(f"Error fetching threat intelligence: {str(e)}")
             # Return a basic fallback in case of error
             return "Unable to fetch current threat intelligence data."
     
@@ -175,11 +180,18 @@ class HypothesisGeneratorAgent:
             # Get environment context
             environment_context = self._get_environment_context()
             
-            # Run the chain
-            result = await self.chain.ainvoke({
-                "threat_intel": threat_intel,
-                "environment_context": environment_context
-            })
+            # Run the chain with retry logic for handling rate limits
+            result = await async_retry_with_exponential_backoff(
+                self.chain.ainvoke,
+                {
+                    "threat_intel": threat_intel,
+                    "environment_context": environment_context
+                },
+                max_retries=5,  # Maximum number of retries
+                # The initial_delay will be overridden by API's retry_delay if available
+                initial_delay=20,
+                max_delay=300  # Maximum delay of 5 minutes
+            )
             
             # Parse the result
             hypotheses = json.loads(result)
@@ -193,6 +205,6 @@ class HypothesisGeneratorAgent:
             
             return limited_hypotheses
         except Exception as e:
-            print(f"Error generating hypotheses: {str(e)}")
+            logger.error(f"Error generating hypotheses: {str(e)}")
             # We'll let the main.py handle the fallback to mock data
             raise
