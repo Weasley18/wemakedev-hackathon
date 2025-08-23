@@ -32,7 +32,7 @@ class HuntPlannerAgent:
         # In a real implementation, this would initialize a language model
         pass
     
-    async def create_plan(self, hypothesis: str, analyst_id: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def create_plan(self, hypothesis: str, analyst_id: str, context: Optional[Dict[str, Any]] = None) -> HuntPlan:
         """
         Create a hunt plan from a natural language hypothesis
         
@@ -104,4 +104,8 @@ class HuntPlannerAgent:
             estimated_execution_time="5 minutes"
         )
         
-        return hunt_plan
+        # Convert QueryDetails objects to dictionaries to match the API model
+        plan_dict = hunt_plan.model_dump()
+        plan_dict['queries'] = [q.model_dump() for q in hunt_plan.queries]
+        
+        return HuntPlan(**plan_dict)
