@@ -23,7 +23,11 @@ The backend implements a sophisticated multi-agent architecture:
 
 2. Install dependencies:
    ```
+   # For development
    pip install -r requirements.txt
+   
+   # For deployment
+   pip install -e .
    ```
 
 3. Copy `env.example` to `.env` and fill in your configuration values:
@@ -51,6 +55,19 @@ The backend includes modular connectors for different data sources:
 - **Splunk**: Query Splunk instances for security data
 - **Elasticsearch**: Search Elasticsearch for security events
 - **REST API**: Connect to generic REST APIs (like threat intelligence services)
+
+## Deployment
+
+For deployment to platforms like Render:
+
+1. Use the provided setup.py for installation:
+   ```
+   pip install -e .
+   ```
+
+2. The deployment process uses a custom build command that handles dependencies correctly.
+
+3. For troubleshooting deployment issues, check that all requirements are properly installed and that the application can find all necessary modules.
 
 ## Development
 
